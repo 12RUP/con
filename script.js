@@ -222,10 +222,10 @@ document.addEventListener('touchend', (event) => {
     const touchEndX = event.changedTouches[0].clientX;
     const swipeDistance = touchEndX - touchStartX;
 
-    if (swipeDistance > 50 && currentLane > 0) {
+    if (swipeDistance < -50 && currentLane > 0) {
         currentLane--;
         player.position.x = lanes[currentLane];
-    } else if (swipeDistance < -50 && currentLane < lanes.length - 1) {
+    } else if (swipeDistance > 50 && currentLane < lanes.length - 1) {
         currentLane++;
         player.position.x = lanes[currentLane];
     } else if (!isJumping) {
@@ -233,3 +233,4 @@ document.addEventListener('touchend', (event) => {
         jumpSpeed = jumpHeight;
     }
 });
+
