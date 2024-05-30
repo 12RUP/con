@@ -309,48 +309,7 @@ document.addEventListener('touchend', () => {
     }
 });
 
-// Adding touch overlay for buttons
-const touchOverlay = document.createElement('div');
-touchOverlay.style.position = 'fixed';
-touchOverlay.style.bottom = '10px';
-touchOverlay.style.width = '100%';
-touchOverlay.style.display = 'flex';
-touchOverlay.style.justifyContent = 'center';
-touchOverlay.style.gap = '10px';
-document.body.appendChild(touchOverlay);
 
-const leftButton = document.createElement('button');
-leftButton.innerText = '←';
-leftButton.style.fontSize = '24px';
-leftButton.addEventListener('click', () => {
-    if (currentLane > 0) {
-        currentLane--;
-        player.position.x = lanes[currentLane];
-    }
-});
-touchOverlay.appendChild(leftButton);
-
-const jumpButton = document.createElement('button');
-jumpButton.innerText = '↑';
-jumpButton.style.fontSize = '24px';
-jumpButton.addEventListener('click', () => {
-    if (!isJumping) {
-        isJumping = true;
-        jumpSpeed = jumpHeight;
-    }
-});
-touchOverlay.appendChild(jumpButton);
-
-const rightButton = document.createElement('button');
-rightButton.innerText = '→';
-rightButton.style.fontSize = '24px';
-rightButton.addEventListener('click', () => {
-    if (currentLane < lanes.length - 1) {
-        currentLane++;
-        player.position.x = lanes[currentLane];
-    }
-});
-touchOverlay.appendChild(rightButton);
 
 // Главная функция анимации
 function animate() {
