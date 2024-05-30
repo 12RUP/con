@@ -380,8 +380,8 @@ document.addEventListener('touchend', () => {
     // Добавляем пороговое значение для определения прыжка
     const jumpThreshold = 50;
 
-    // Если вертикальное смещение больше порогового значения и нет активного прыжка, выполняем прыжок
-    if (deltaY < -jumpThreshold && !isJumping) {
+    // Проверяем, что вертикальное смещение больше, чем горизонтальное, и превышает пороговое значение для прыжка
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > jumpThreshold && !isJumping) {
         // Устанавливаем флаг прыжка
         isJumping = true;
         // Задаем начальную скорость прыжка
@@ -401,3 +401,4 @@ document.addEventListener('touchend', () => {
         }
     }
 });
+
