@@ -186,8 +186,6 @@ for (let i = -200; i < 200; i += 10) {
     }
 }
 
-
-
 // Генерация объектов заранее и увеличение частоты генерации
 function generateObjects() {
     const pattern = patterns[Math.floor(Math.random() * patterns.length)];
@@ -212,8 +210,7 @@ function startGeneratingObjects() {
 
     setInterval(() => {
         if (!isGameOver) {
-            speed += 0.008; 
-// Увеличение скорости каждые 10 секунд
+            speed += 0.008; // Увеличение скорости каждые 10 секунд
         }
     }, 10000);
 }
@@ -270,6 +267,90 @@ document.addEventListener('keydown', (event) => {
         jumpSpeed = jumpHeight;
     }
 });
+
+// Touch controls for mobile devices
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+document.addEventListener('touchstart', (event) => {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+});
+
+document.addEventListener('touchmove', (event) => {
+    touchEndX = event.touches[0].clientX;
+    touchEndY = event.touches[0].clientY;
+});
+
+document.addEventListener('touchend', () => {
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (deltaX > 0 && currentLane < lanes.length - 1) {
+            // Swipe right
+            currentLane++;
+            player.position.x = lanes[currentLane];
+        } else if (deltaX < 0 && currentLane > 0) {
+            // Swipe left
+            currentLane--;
+            player.position.x = lanes[currentLane];
+        }
+    } else {
+        // Vertical swipe
+        if (deltaY < 0 && !isJumping) {
+            // Swipe up (jump)
+            isJumping = true;
+            jumpSpeed = jumpHeight;
+        }
+    }
+});
+
+// Adding touch overlay for buttons
+const touchOverlay = document.createElement('div');
+touchOverlay.style.position = 'fixed';
+touchOverlay.style.bottom = '10px';
+touchOverlay.style.width = '100%';
+touchOverlay.style.display = 'flex';
+touchOverlay.style.justifyContent = 'center';
+touchOverlay.style.gap = '10px';
+document.body.appendChild(touchOverlay);
+
+const leftButton = document.createElement('button');
+leftButton.innerText = '←';
+leftButton.style.fontSize = '24px';
+leftButton.addEventListener('click', () => {
+    if (currentLane > 0) {
+        currentLane--;
+        player.position.x = lanes[currentLane];
+    }
+});
+touchOverlay.appendChild(leftButton);
+
+const jumpButton = document.createElement('button');
+jumpButton.innerText = '↑';
+jumpButton.style.fontSize = '24px';
+jumpButton.addEventListener('click', () => {
+    if (!isJumping) {
+        isJumping = true;
+        jumpSpeed = jumpHeight;
+    }
+});
+touchOverlay.appendChild(jumpButton);
+
+const rightButton = document.createElement('button');
+rightButton.innerText = '→';
+rightButton.style.fontSize = '24px';
+rightButton.addEventListener('click', () => {
+    if (currentLane < lanes.length - 1) {
+        currentLane++;
+        player.position.x = lanes[currentLane];
+    }
+});
+touchOverlay.appendChild(rightButton);
 
 // Главная функция анимации
 function animate() {
@@ -354,5 +435,3 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-
