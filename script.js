@@ -377,23 +377,27 @@ document.addEventListener('touchend', () => {
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Horizontal swipe
+    // Добавляем пороговое значение для определения прыжка
+    const jumpThreshold = 50;
+
+    // Если вертикальное смещение больше порогового значения и нет активного прыжка, выполняем прыжок
+    if (deltaY < -jumpThreshold && !isJumping) {
+        // Устанавливаем флаг прыжка
+        isJumping = true;
+        // Задаем начальную скорость прыжка
+        jumpSpeed = jumpHeight;
+    }
+
+    // Если горизонтальное смещение больше, чем вертикальное, и нет прыжка, обрабатываем горизонтальный свайп
+    if (Math.abs(deltaX) > Math.abs(deltaY) && !isJumping) {
         if (deltaX > 0 && currentLane < lanes.length - 1) {
-            // Swipe right
+            // Свайп вправо
             currentLane++;
             player.position.x = lanes[currentLane];
         } else if (deltaX < 0 && currentLane > 0) {
-            // Swipe left
+            // Свайп влево
             currentLane--;
             player.position.x = lanes[currentLane];
-        }
-    } else {
-        // Vertical swipe
-        if (deltaY < 0 && !isJumping) {
-            // Swipe up (jump)
-            isJumping = true;
-            jumpSpeed = jumpHeight;
         }
     }
 });
