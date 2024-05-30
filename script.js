@@ -1,4 +1,65 @@
-// Setting up the scene, camera, and renderer
+// Объявление переменных
+let playerMaterialColor = 0x0000ff; // Цвет по умолчанию
+let totalCoins = 0;
+
+// Загрузка монет из локального хранилища
+if (localStorage.getItem('totalCoins')) {
+    totalCoins = parseInt(localStorage.getItem('totalCoins'));
+}
+
+// Функция для обновления общего количества монет
+function updateTotalCoins() {
+    document.getElementById('total-coins').innerText = `Всего монет: ${totalCoins}`;
+}
+updateTotalCoins();
+
+// Получение элементов
+const mainMenu = document.getElementById('main-menu');
+const startGameButton = document.getElementById('start-game-button');
+const coinCounter = document.getElementById('coin-counter');
+const gameOverModal = document.getElementById('game-over-modal');
+const gameOverText = document.getElementById('game-over-text');
+
+// Начало игры
+startGameButton.addEventListener('click', () => {
+    mainMenu.style.display = 'none';
+    coinCounter.style.display = 'block';
+    animate();
+    startGeneratingObjects();
+});
+
+// Выбор скинов
+document.querySelectorAll('.skin-button').forEach(button => {
+    button.addEventListener('click', (event) => {
+        playerMaterialColor = parseInt(event.target.getAttribute('data-color'));
+        player.material.color.setHex(playerMaterialColor);
+        cubePreview.material.color.setHex(playerMaterialColor);
+    });
+});
+
+// Setting up the scene, camera, and renderer for main menu cube preview
+const previewScene = new THREE.Scene();
+const previewCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+previewCamera.position.z = 2;
+
+const previewRenderer = new THREE.WebGLRenderer();
+previewRenderer.setSize(200, 200);
+document.getElementById('cube-preview').appendChild(previewRenderer.domElement);
+
+const cubeGeometry = new THREE.BoxGeometry();
+const cubeMaterial = new THREE.MeshBasicMaterial({ color: playerMaterialColor });
+const cubePreview = new THREE.Mesh(cubeGeometry, cubeMaterial);
+previewScene.add(cubePreview);
+
+function previewAnimate() {
+    requestAnimationFrame(previewAnimate);
+    cubePreview.rotation.x += 0.01;
+    cubePreview.rotation.y += 0.01;
+    previewRenderer.render(previewScene, previewCamera);
+}
+previewAnimate();
+
+// Setting up the scene, camera, and renderer for the game
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);  // Blue sky
 
@@ -11,11 +72,11 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Getting coin counter element
-const coinCounter = document.getElementById('coin-counter');
+const coinCounterElement = document.getElementById('coin-counter');
 
 // Getting modal elements
-const gameOverModal = document.getElementById('game-over-modal');
-const gameOverText = document.getElementById('game-over-text');
+const gameOverModalElement = document.getElementById('game-over-modal');
+const gameOverTextElement = document.getElementById('game-over-text');
 
 // Creating the ground segments
 const segmentLength = 100;
@@ -38,7 +99,7 @@ for (let i = 0; i < 20; i++) {
 
 // Creating the player
 const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
-const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+let playerMaterial = new THREE.MeshBasicMaterial({ color: playerMaterialColor });
 const player = new THREE.Mesh(playerGeometry, playerMaterial);
 player.position.y = 0.5;
 scene.add(player);
@@ -72,7 +133,7 @@ function createObstacle(zPosition) {
 
 // Создание монет
 function createCoin(zPosition) {
-    const coinGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+    const coinGeometry = new THREE.CircleGeometry(0.3, 32);
     const coinMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
     const coin = new THREE.Mesh(coinGeometry, coinMaterial);
     const lane = lanes[Math.floor(Math.random() * lanes.length)];
@@ -81,16 +142,46 @@ function createCoin(zPosition) {
     scene.add(coin);
 }
 
-// Обработка изменения размера окна
-window.addEventListener('resize', () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    renderer.setSize(width, height);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-});
+// Функция для создания анимации при сборе монеты
+function animateCoinCollection(coin) {
+    const jumpHeight = 2;
+    const animationDuration = 500;
+    const scaleFactor = 1.5;
 
-// Управление игроком
+    const initialPosition = coin.position.clone();
+    const targetPosition = player.position.clone();
+    targetPosition.y += 1; // Target position above the player
+
+    const initialScale = coin.scale.clone();
+    const targetScale = initialScale.clone().multiplyScalar(scaleFactor);
+
+    const startTime = Date.now();
+
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / animationDuration, 1);
+
+        // Interpolating position and scale
+        coin.position.lerpVectors(initialPosition, targetPosition, t);
+        coin.scale.lerpVectors(initialScale, targetScale, t);
+
+        // Apply an upward and then downward movement to simulate a jump
+        const jumpProgress = t < 0.5 ? t * 2 : (1 - t) * 2;
+        coin.position.y = initialPosition.y + jumpHeight * jumpProgress;
+
+        // Check if the animation is done
+        if (t < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            // Remove the coin after animation
+            scene.remove(coin);
+        }
+    }
+
+    animate();
+}
+
+// Обработка событий нажатий клавиш для управления игроком
 document.addEventListener('keydown', (event) => {
     if (event.code === 'ArrowLeft' && currentLane > 0) {
         currentLane--;
@@ -131,8 +222,8 @@ function animate() {
     if (isJumping) {
         player.position.y += jumpSpeed;
         jumpSpeed += gravity;
-        if (player.position.y <= 0.5) {
-            player.position.y = 0.5;
+        if (player.position.y <= 0.7) {
+            player.position.y = 0.7;
             isJumping = false;
         }
     }
@@ -157,9 +248,12 @@ function animate() {
         const playerBox = new THREE.Box3().setFromObject(player);
         const obstacleBox = new THREE.Box3().setFromObject(obstacle);
         if (playerBox.intersectsBox(obstacleBox)) {
-            gameOverText.innerHTML = `Игра окончена!<br>Ваш счет: ${score}<br>Собрано монет: ${coinCount}`;
-            gameOverModal.style.display = 'block';
+            gameOverTextElement.innerHTML = `Игра окончена!<br>Ваш счет: ${score}<br>Собрано монет: ${coinCount}`;
+            gameOverModalElement.style.display = 'block';
             isGameOver = true;
+            totalCoins += coinCount;
+            localStorage.setItem('totalCoins', totalCoins);
+            updateTotalCoins();
         }
     });
 
@@ -176,11 +270,11 @@ function animate() {
         const coinBox = new THREE.Box3().setFromObject(coin);
         if (playerBox.intersectsBox(coinBox)) {
             coinCount++;
-            scene.remove(coin);
+            animateCoinCollection(coin);
             coins.splice(index, 1);
 
             // Обновление счетчика монет
-            coinCounter.innerText = 'Монеты: ' + coinCount;
+            coinCounterElement.innerText = 'Монеты: ' + coinCount;
         }
     });
 
@@ -208,9 +302,6 @@ function startGeneratingObjects() {
     }, 45000);
 }
 
-// Начало анимации
-animate();
-startGeneratingObjects();
 // Управление игроком на мобильных устройствах
 let touchStartX = 0;
 
