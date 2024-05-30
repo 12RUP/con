@@ -26,6 +26,7 @@ startGameButton.addEventListener('click', () => {
     coinCounter.style.display = 'block';
     animate();
     startGeneratingObjects();
+    generateInteriorObjects(); // Вызов функции генерации объектов интерьера
 });
 
 // Выбор скинов
@@ -79,7 +80,8 @@ const gameOverModalElement = document.getElementById('game-over-modal');
 const gameOverTextElement = document.getElementById('game-over-text');
 
 // Creating the ground segments
-const segmentLength = 100;
+const segmentLength = 150;
+const segmentWidth = 20;  // Увеличенная ширина сегментов поля
 let segments = [];
 
 function createGroundSegment(zPosition) {
@@ -98,10 +100,10 @@ for (let i = 0; i < 20; i++) {
 }
 
 // Creating the player
-const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
+const playerGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);  // Увеличенные размеры
 let playerMaterial = new THREE.MeshBasicMaterial({ color: playerMaterialColor });
 const player = new THREE.Mesh(playerGeometry, playerMaterial);
-player.position.y = 0.5;
+player.position.y = 1;  // Увеличенная высота
 scene.add(player);
 
 // Initializing obstacles and coins array and speed
@@ -118,28 +120,102 @@ let isGameOver = false;
 let isJumping = false;
 let jumpSpeed = 0;
 const gravity = -0.015;
-const jumpHeight = 0.3;
+const jumpHeight = 0.5;
 
-// Создание препятствий
-function createObstacle(zPosition) {
-    const obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const obstacleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
-    const lane = lanes[Math.floor(Math.random() * lanes.length)];
-    obstacle.position.set(lane, 0.5, zPosition);
-    obstacles.push(obstacle);
-    scene.add(obstacle);
+// Паттерны генерации
+const patterns = [
+    ['O', 'C', 'O'],
+    ['O', 'M', 'O'],
+    ['O', 'O', 'O'],
+    ['M', 'O', 'O'],
+    ['O', 'M', 'O'],
+    ['M', 'O', 'N'],
+    ['N', 'M', 'O'],
+    ['M', 'O', 'N'],
+];
+
+function createObstacleOrCoin(type, lane, zPosition) {
+    if (type === 'O') {
+        const obstacleGeometry = new THREE.BoxGeometry(1.7, 1.7, 1.7);  // Увеличенные размеры
+        const obstacleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+        obstacle.position.set(lane, 1, zPosition);  // Увеличенная высота
+        obstacles.push(obstacle);
+        scene.add(obstacle);
+    } else if (type === 'M') {
+        const coinGeometry = new THREE.CircleGeometry(0.6, 32);  // Увеличенный радиус
+        const coinMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const coin = new THREE.Mesh(coinGeometry, coinMaterial);
+        coin.position.set(lane, 1, zPosition);  // Увеличенная высота
+        coins.push(coin);
+        scene.add(coin);
+    }
+}
+function createTree(x, z) {
+    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2);
+    const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 }); // Коричневый цвет ствола
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.set(x, 1, z);
+
+    const leavesGeometry = new THREE.SphereGeometry(1);
+    const leavesMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Зеленый цвет листвы
+    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+    leaves.position.set(x, 3, z);
+
+    scene.add(trunk);
+    scene.add(leaves);
 }
 
-// Создание монет
-function createCoin(zPosition) {
-    const coinGeometry = new THREE.CircleGeometry(0.3, 32);
-    const coinMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const coin = new THREE.Mesh(coinGeometry, coinMaterial);
-    const lane = lanes[Math.floor(Math.random() * lanes.length)];
-    coin.position.set(lane, 0.5, zPosition);
-    coins.push(coin);
-    scene.add(coin);
+// Функция для создания здания
+function createBuilding(x, z) {
+    const buildingGeometry = new THREE.BoxGeometry(2, 6, 2);
+    const buildingMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 }); // Серый цвет здания
+    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+    building.position.set(x, 3, z);
+
+    scene.add(building);
+}
+
+// Добавление деревьев и зданий вдоль дороги
+for (let i = -200; i < 200; i += 10) {
+    createTree(-5, i);
+    createTree(5, i);
+    if (i % 20 === 0) { // Размещаем здания реже
+        createBuilding(-8, i);
+        createBuilding(8, i);
+    }
+}
+
+
+
+// Генерация объектов заранее и увеличение частоты генерации
+function generateObjects() {
+    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+    const zPosition = player.position.z - 35;  // Увеличенная дистанция до игрока
+
+    pattern.forEach((type, index) => {
+        const lane = lanes[index];
+        createObstacleOrCoin(type, lane, zPosition);
+    });
+}
+
+// Запуск генерации объектов с динамическими интервалами
+function startGeneratingObjects() {
+    function generate() {
+        if (!isGameOver) {
+            generateObjects();
+            setTimeout(generate, 450);   // Генерация объектов каждые 450 мс
+        }
+    }
+    generate();
+    
+
+    setInterval(() => {
+        if (!isGameOver) {
+            speed += 0.008; 
+// Увеличение скорости каждые 10 секунд
+        }
+    }, 10000);
 }
 
 // Функция для создания анимации при сборе монеты
@@ -194,19 +270,6 @@ document.addEventListener('keydown', (event) => {
         jumpSpeed = jumpHeight;
     }
 });
-
-// Функция для создания препятствий и монет чаще
-function generateObjects() {
-    const zPosition = player.position.z - 50;  // Позиция далеко перед игроком
-    for (let i = 0; i < 4; i++) {  // Генерируем четыре препятствия и четыре монеты каждый раз
-        if (obstacles.length < 30) {  // Ограничиваем количество препятствий
-            createObstacle(zPosition - i * 10);  // Разделяем по позиции
-        }
-        if (coins.length < 30) {  // Ограничиваем количество монет
-            createCoin(zPosition - i * 10);  // Разделяем по позиции
-        }
-    }
-}
 
 // Главная функция анимации
 function animate() {
@@ -285,43 +348,11 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// Запуск генерации объектов с динамическими интервалами
-function startGeneratingObjects() {
-    function generate() {
-        if (!isGameOver) {
-            generateObjects();
-            setTimeout(generate, 950);  // Генерация объектов каждые 950 мс
-        }
-    }
-    generate();
-
-    setInterval(() => {
-        if (!isGameOver) {
-            speed += 0.01;  // Увеличение скорости каждые 45 секунд
-        }
-    }, 45000);
-}
-
-// Управление игроком на мобильных устройствах
-let touchStartX = 0;
-
-document.addEventListener('touchstart', (event) => {
-    touchStartX = event.touches[0].clientX;
+// Обработка изменения размера окна
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-document.addEventListener('touchend', (event) => {
-    const touchEndX = event.changedTouches[0].clientX;
-    const swipeDistance = touchEndX - touchStartX;
-
-    if (swipeDistance < -50 && currentLane > 0) {
-        currentLane--;
-        player.position.x = lanes[currentLane];
-    } else if (swipeDistance > 50 && currentLane < lanes.length - 1) {
-        currentLane++;
-        player.position.x = lanes[currentLane];
-    } else if (!isJumping) {
-        isJumping = true;
-        jumpSpeed = jumpHeight;
-    }
-});
 
