@@ -186,6 +186,8 @@ for (let i = -200; i < 200; i += 10) {
     }
 }
 
+
+
 // Генерация объектов заранее и увеличение частоты генерации
 function generateObjects() {
     const pattern = patterns[Math.floor(Math.random() * patterns.length)];
@@ -210,7 +212,8 @@ function startGeneratingObjects() {
 
     setInterval(() => {
         if (!isGameOver) {
-            speed += 0.008; // Увеличение скорости каждые 10 секунд
+            speed += 0.008; 
+// Увеличение скорости каждые 10 секунд
         }
     }, 10000);
 }
@@ -267,49 +270,6 @@ document.addEventListener('keydown', (event) => {
         jumpSpeed = jumpHeight;
     }
 });
-
-// Touch controls for mobile devices
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
-
-document.addEventListener('touchstart', (event) => {
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-});
-
-document.addEventListener('touchmove', (event) => {
-    touchEndX = event.touches[0].clientX;
-    touchEndY = event.touches[0].clientY;
-});
-
-document.addEventListener('touchend', () => {
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Horizontal swipe
-        if (deltaX > 0 && currentLane < lanes.length - 1) {
-            // Swipe right
-            currentLane++;
-            player.position.x = lanes[currentLane];
-        } else if (deltaX < 0 && currentLane > 0) {
-            // Swipe left
-            currentLane--;
-            player.position.x = lanes[currentLane];
-        }
-    } else {
-        // Vertical swipe
-        if (deltaY < 0 && !isJumping) {
-            // Swipe up (jump)
-            isJumping = true;
-            jumpSpeed = jumpHeight;
-        }
-    }
-});
-
-
 
 // Главная функция анимации
 function animate() {
@@ -393,4 +353,47 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+
+
+// Touch controls for mobile devices
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+document.addEventListener('touchstart', (event) => {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+});
+
+document.addEventListener('touchmove', (event) => {
+    touchEndX = event.touches[0].clientX;
+    touchEndY = event.touches[0].clientY;
+});
+
+document.addEventListener('touchend', () => {
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (deltaX > 0 && currentLane < lanes.length - 1) {
+            // Swipe right
+            currentLane++;
+            player.position.x = lanes[currentLane];
+        } else if (deltaX < 0 && currentLane > 0) {
+            // Swipe left
+            currentLane--;
+            player.position.x = lanes[currentLane];
+        }
+    } else {
+        // Vertical swipe
+        if (deltaY < 0 && !isJumping) {
+            // Swipe up (jump)
+            isJumping = true;
+            jumpSpeed = jumpHeight;
+        }
+    }
 });
