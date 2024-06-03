@@ -360,45 +360,46 @@ window.addEventListener('resize', () => {
 // Touch controls for mobile devices
 let touchStartX = 0;
 let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
 
 document.addEventListener('touchstart', (event) => {
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
 });
 
-document.addEventListener('touchmove', (event) => {
-    touchEndX = event.touches[0].clientX;
-    touchEndY = event.touches[0].clientY;
-});
+document.addEventListener('touchend', (event) => {
+    const touchEndX = event.changedTouches[0].clientX;
+    const touchEndY = event.changedTouches[0].clientY;
 
-document.addEventListener('touchend', () => {
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    // Добавляем пороговое значение для определения прыжка
-    const jumpThreshold = 50;
+    // Определяем порог для горизонтальных свайпов
+    const swipeThreshold = 30;
 
-    // Проверяем, что вертикальное смещение больше, чем горизонтальное, и превышает пороговое значение для прыжка
-    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > jumpThreshold && !isJumping) {
-        // Устанавливаем флаг прыжка
+    if (Math.abs(deltaX) < swipeThreshold && Math.abs(deltaY) < swipeThreshold && !isJumping) {
+        // Если касание не является свайпом, считаем это прыжком
         isJumping = true;
-        // Задаем начальную скорость прыжка
         jumpSpeed = jumpHeight;
-    }
-
-    // Если горизонтальное смещение больше, чем вертикальное, и нет прыжка, обрабатываем горизонтальный свайп
-    if (Math.abs(deltaX) > Math.abs(deltaY) && !isJumping) {
-        if (deltaX > 0 && currentLane < lanes.length - 1) {
-            // Свайп вправо
-            currentLane++;
-            player.position.x = lanes[currentLane];
-        } else if (deltaX < 0 && currentLane > 0) {
-            // Свайп влево
-            currentLane--;
-            player.position.x = lanes[currentLane];
+    } else {
+        // Обрабатываем горизонтальные свайпы
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0 && currentLane < lanes.length - 1) {
+                // Свайп вправо
+                currentLane++;
+                player.position.x = lanes[currentLane];
+            } else if (deltaX < 0 && currentLane > 0) {
+                // Свайп влево
+                currentLane--;
+                player.position.x = lanes[currentLane];
+            }
         }
     }
+});
+
+// Обновление размера рендерера при изменении размера окна
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
