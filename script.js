@@ -204,7 +204,7 @@ function startGeneratingObjects() {
     function generate() {
         if (!isGameOver) {
             generateObjects();
-            setTimeout(generate, 1000);   // Генерация объектов каждые 450 мс
+            setTimeout(generate, 5000);   // Генерация объектов каждые 450 мс
         }
     }
     generate();
